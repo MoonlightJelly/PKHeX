@@ -4,10 +4,13 @@ on:
   push:
     branches: [ master ]
     tags:
-      - 'v*'  # Triggers release on version tags like v1.0.0
+      - 'v*'
   pull_request:
     branches: [ master ]
   workflow_dispatch:
+
+permissions:
+  contents: write  # This grants permission to create releases
 
 jobs:
   build:
@@ -35,12 +38,6 @@ jobs:
     - name: Publish standalone Windows app
       run: dotnet publish PKHeX.WinForms/PKHeX.WinForms.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -o ./publish
     
-    - name: Upload artifact (always)
-      uses: actions/upload-artifact@v4
-      with:
-        name: PKHeX-win-x64
-        path: ./publish/*
-    
     - name: Create ZIP for release
       if: startsWith(github.ref, 'refs/tags/v')
       run: |
@@ -54,4 +51,12 @@ jobs:
         name: PKHeX ${{ github.ref_name }}
         draft: false
         prerelease: false
-        generate_release_notes: true
+        generate_release_notes: false  # Disabled to avoid permission issues
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PKHeX-win-x64
+        path: ./publish/*
